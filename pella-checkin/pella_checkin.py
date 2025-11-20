@@ -38,8 +38,8 @@ class PellaAutoRenew:
     WAIT_TIME_AFTER_LOGIN = 15 # 登录后等待跳转到HOME页面的秒数
 
     def __init__(self, email, password):
-        self.email = email
-        self.password = password
+        self.email = gvbh520@gmail.com
+        self.password = zhang668
         self.telegram_bot_token = os.getenv('TG_BOT_TOKEN', '')
         self.telegram_chat_id = os.getenv('TG_CHAT_ID', '')
         
