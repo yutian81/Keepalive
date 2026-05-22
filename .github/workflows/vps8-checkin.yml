@@ -104,21 +104,21 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      # 👇 每天自动把 cron +10 分钟
-      - name: Auto increment cron by +10 minutes daily
+      # 👇 每天自动把 +cron 分钟
+      - name: Auto increment cron
         if: success()
         run: |
           # 读取当前 cron
           yaml_file=".github/workflows/vps8-checkin.yml"
-          current_cron=$(grep -E "cron: '.*'" "$yaml_file" | head -n1)
-          echo "当前cron：$current_cron"
+          cron_line=$(grep -E "^[ ]*- cron: '.*'" "$yaml_file" | head -1)
+          cron_val=$(echo "$cron_line" | sed -E "s/.*cron: '([0-9 ]+)'.*/\1/")
+          minute=$(echo "$cron_val" | awk '{print $1}')
+          hour=$(echo "$cron_val" | awk '{print $2}')
+          echo "当前时间：$hour 时 $minute 分"
 
-          # 分解 分 时，+11分钟
-          minute=$(echo "$current_cron" | awk '{print $2}' | tr -d "'")
-          hour=$(echo "$current_cron" | awk '{print $3}' | tr -d "'")
+          # 每次+分钟
           new_minute=$((minute + 11))
           new_hour=$hour
-
           # 分钟满 60 进 1 小时
           [ $new_minute -ge 60 ] && { new_minute=$((new_minute-60)); new_hour=$((hour+1)); }
           # 小时满 1 归0 
@@ -126,9 +126,9 @@ jobs:
 
           new_cron="$new_minute $new_hour * * *"
           echo "新时间：$new_hour 时 $new_minute 分"
-          echo "新cron：$new_cron"
-          sed -i "s/cron: '.*'/cron: '$new_cron'/" "$yaml_file"
           
+          # 替换并提交
+          sed -i -E "s/- cron: '.*'/- cron: '$new_cron'/" "$yaml_file"
           git config user.name "Actions"
           git config user.email "actions@github.com"
           git add "$yaml_file"
