@@ -96,6 +96,9 @@ do_install() {
     touch ${RCLONE_CONFIG}
     chmod 600 ${RCLONE_CONFIG}
 
+    # 自动探测系统里真实的 rclone 绝对路径
+    RCLONE_BIN_PATH=$(command -v rclone || echo "/usr/bin/rclone")
+
     # 注册系统服务
     echo -e "${YELLOW}⚙️  生成系统服务文件...${PLAIN}"
     tee ${SERVICE_FILE} >/dev/null <<EOF
@@ -106,7 +109,7 @@ Wants=network-online.target
 
 [Service]
 User=root
-ExecStart=/usr/bin/rclone rcd \\
+ExecStart=${RCLONE_BIN_PATH} rcd \\
 --rc-addr=0.0.0.0:${WEB_PORT} \\
 --rc-user=${WEB_USER} \\
 --rc-pass=${WEB_PASS} \\
