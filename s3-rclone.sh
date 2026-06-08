@@ -72,8 +72,8 @@ do_install() {
     read -p "密码   (默认: admin123): " WEB_PASS
     WEB_PASS=${WEB_PASS:-admin123}
 
-    read -p "端口   (默认: 6768): " WEB_PORT
-    WEB_PORT=${WEB_PORT:-6768}
+    read -p "端口   (默认: 6769): " WEB_PORT
+    WEB_PORT=${WEB_PORT:-6769}
 
     echo -e ""
     echo -e "${GREEN}✅ 配置确认${PLAIN}"
