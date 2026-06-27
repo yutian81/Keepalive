@@ -18,12 +18,54 @@ concurrency:
 
 jobs:
   rustix-alive:
-    # 调试模式：去掉 if，只看 Uptime Kuma 实际传了什么
+    # workflow_dispatch 始终执行；repository_dispatch 仅 status 含 Down 时执行
+    if: github.event_name != 'repository_dispatch' || contains(github.event.client_payload.status, 'Down')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
 
     steps:
       - name: 🐛 调试 - 打印收到的 client_payload
         run: |
           echo "event_name: ${{ github.event_name }}"
           echo 'client_payload: ${{ toJSON(github.event.client_payload) }}'
+
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: rustix-auto/requirements.txt
+
+      - name: 安装依赖
+        working-directory: rustix-auto
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 安装 Playwright 浏览器
+        run: python -m playwright install --with-deps chromium
+
+      - name: 运行自动启动脚本
+        working-directory: rustix-auto
+        env:
+          # 从 GitHub Secrets 读取账号，格式：邮箱:密码,邮箱:密码
+          # 例：a@example.com:pwd1,b@example.com:pwd2
+          ACCOUNTS: ${{ secrets.RUSTIX_ACCOUNTS }}
+          # Telegram 通知（可选，未配置 Secret 则不推送）
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python main.py
+
+      - name: 上传运行日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-log
+          path: |
+            rustix-auto/run.log
+            rustix-auto/debug_*.png
+          if-no-files-found: ignore
+          retention-days: 7
